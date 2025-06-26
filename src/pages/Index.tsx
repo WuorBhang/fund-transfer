@@ -24,6 +24,8 @@ export interface Transaction {
   note?: string;
   timestamp: Date;
   type: "transfer" | "conversion";
+  isReversed?: boolean;
+  reversalOfTransaction?: string;
 }
 
 const INITIAL_ACCOUNTS: Account[] = [
@@ -95,6 +97,7 @@ const Index = () => {
       note,
       timestamp: new Date(),
       type: fromAccount.currency !== toAccount.currency ? "conversion" : "transfer",
+      isReversed: false,
     };
 
     setTransactions(prev => [newTransaction, ...prev]);
@@ -105,13 +108,33 @@ const Index = () => {
     const transaction = transactions.find(t => t.id === transactionId);
     if (!transaction) return;
 
+    // Check if transaction is already reversed
+    if (transaction.isReversed) {
+      toast({
+        title: "Reversal Failed",
+        description: `Transaction ${transactionId} has already been reversed.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if this is already a reversal transaction
+    if (transaction.reversalOfTransaction) {
+      toast({
+        title: "Reversal Failed",
+        description: "Cannot reverse a reversal transaction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Find the accounts involved
     const fromAccount = accounts.find(acc => acc.name === transaction.fromAccount);
     const toAccount = accounts.find(acc => acc.name === transaction.toAccount);
 
     if (!fromAccount || !toAccount) {
       toast({
-        title: "Reverse Failed",
+        title: "Reversal Failed",
         description: "Could not find the accounts involved in this transaction.",
         variant: "destructive",
       });
@@ -122,7 +145,7 @@ const Index = () => {
     const amountToReverse = transaction.convertedAmount || transaction.amount;
     if (toAccount.balance < amountToReverse) {
       toast({
-        title: "Reverse Failed",
+        title: "Reversal Failed",
         description: "Insufficient balance in destination account to reverse this transaction.",
         variant: "destructive",
       });
@@ -143,6 +166,11 @@ const Index = () => {
 
     setAccounts(updatedAccounts);
 
+    // Mark original transaction as reversed
+    const updatedTransactions = transactions.map(t => 
+      t.id === transactionId ? { ...t, isReversed: true } : t
+    );
+
     // Generate reversal transaction ID
     const reversalId = `REV${Date.now().toString().slice(-8)}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
 
@@ -158,9 +186,11 @@ const Index = () => {
       note: `Reversal of transaction ${transactionId}`,
       timestamp: new Date(),
       type: transaction.type,
+      isReversed: false,
+      reversalOfTransaction: transactionId,
     };
 
-    setTransactions(prev => [reversalTransaction, ...prev]);
+    setTransactions([reversalTransaction, ...updatedTransactions]);
 
     toast({
       title: "Transaction Reversed",

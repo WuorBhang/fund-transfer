@@ -1,9 +1,8 @@
-
 import { Transaction } from "@/pages/Index";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRightLeft, RefreshCw, Undo2 } from "lucide-react";
+import { ArrowRightLeft, RefreshCw, Undo2, CheckCircle } from "lucide-react";
 
 interface TransactionLogProps {
   transactions: Transaction[];
@@ -76,7 +75,19 @@ export const TransactionLog = ({ transactions, onReverseTransaction }: Transacti
             {transactions.map((transaction) => (
               <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
-                  #{transaction.id}
+                  <div className="flex items-center gap-2">
+                    #{transaction.id}
+                    {transaction.isReversed && (
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-600 border-red-200">
+                        Reversed
+                      </Badge>
+                    )}
+                    {transaction.reversalOfTransaction && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200">
+                        Reversal
+                      </Badge>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-3">
@@ -128,15 +139,26 @@ export const TransactionLog = ({ transactions, onReverseTransaction }: Transacti
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onReverseTransaction(transaction.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Undo2 className="w-4 h-4 mr-1" />
-                    Reverse
-                  </Button>
+                  {transaction.isReversed ? (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm">Reversed</span>
+                    </div>
+                  ) : transaction.reversalOfTransaction ? (
+                    <Badge variant="outline" className="text-blue-600">
+                      Reversal
+                    </Badge>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onReverseTransaction(transaction.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Undo2 className="w-4 h-4 mr-1" />
+                      Reverse
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
