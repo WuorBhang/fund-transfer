@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { AccountCard } from "@/components/AccountCard";
 import { TransferModal } from "@/components/TransferModal";
 import { TransactionLog } from "@/components/TransactionLog";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLeft, Filter } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Account {
   id: string;
@@ -44,6 +44,7 @@ const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [selectedCurrencyFilter, setSelectedCurrencyFilter] = useState<string>("all");
+  const { toast } = useToast();
 
   const handleTransfer = (
     fromAccountId: string,
@@ -77,9 +78,12 @@ const Index = () => {
 
     setAccounts(updatedAccounts);
 
+    // Generate unique transaction ID
+    const transactionId = `TXN${Date.now().toString().slice(-8)}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
     // Add transaction record
     const newTransaction: Transaction = {
-      id: Date.now().toString(),
+      id: transactionId,
       fromAccount: fromAccount.name,
       toAccount: toAccount.name,
       amount,
@@ -95,6 +99,73 @@ const Index = () => {
 
     setTransactions(prev => [newTransaction, ...prev]);
     return true;
+  };
+
+  const handleReverseTransaction = (transactionId: string) => {
+    const transaction = transactions.find(t => t.id === transactionId);
+    if (!transaction) return;
+
+    // Find the accounts involved
+    const fromAccount = accounts.find(acc => acc.name === transaction.fromAccount);
+    const toAccount = accounts.find(acc => acc.name === transaction.toAccount);
+
+    if (!fromAccount || !toAccount) {
+      toast({
+        title: "Reverse Failed",
+        description: "Could not find the accounts involved in this transaction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if the destination account has sufficient balance to reverse
+    const amountToReverse = transaction.convertedAmount || transaction.amount;
+    if (toAccount.balance < amountToReverse) {
+      toast({
+        title: "Reverse Failed",
+        description: "Insufficient balance in destination account to reverse this transaction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Reverse the transaction by updating account balances
+    const updatedAccounts = accounts.map(account => {
+      if (account.name === transaction.fromAccount) {
+        return { ...account, balance: account.balance + transaction.amount };
+      }
+      if (account.name === transaction.toAccount) {
+        const reversalAmount = transaction.convertedAmount || transaction.amount;
+        return { ...account, balance: account.balance - reversalAmount };
+      }
+      return account;
+    });
+
+    setAccounts(updatedAccounts);
+
+    // Generate reversal transaction ID
+    const reversalId = `REV${Date.now().toString().slice(-8)}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+    // Add reversal transaction record
+    const reversalTransaction: Transaction = {
+      id: reversalId,
+      fromAccount: transaction.toAccount,
+      toAccount: transaction.fromAccount,
+      amount: transaction.convertedAmount || transaction.amount,
+      currency: transaction.convertedCurrency || transaction.currency,
+      convertedAmount: transaction.type === "conversion" ? transaction.amount : undefined,
+      convertedCurrency: transaction.type === "conversion" ? transaction.currency : undefined,
+      note: `Reversal of transaction ${transactionId}`,
+      timestamp: new Date(),
+      type: transaction.type,
+    };
+
+    setTransactions(prev => [reversalTransaction, ...prev]);
+
+    toast({
+      title: "Transaction Reversed",
+      description: `Transaction ${transactionId} has been successfully reversed.`,
+    });
   };
 
   const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
@@ -179,7 +250,10 @@ const Index = () => {
             </div>
           </div>
           
-          <TransactionLog transactions={filteredTransactions} />
+          <TransactionLog 
+            transactions={filteredTransactions} 
+            onReverseTransaction={handleReverseTransaction}
+          />
         </div>
       </div>
 

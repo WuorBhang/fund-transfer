@@ -2,13 +2,15 @@
 import { Transaction } from "@/pages/Index";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRightLeft, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowRightLeft, RefreshCw, Undo2 } from "lucide-react";
 
 interface TransactionLogProps {
   transactions: Transaction[];
+  onReverseTransaction: (transactionId: string) => void;
 }
 
-export const TransactionLog = ({ transactions }: TransactionLogProps) => {
+export const TransactionLog = ({ transactions, onReverseTransaction }: TransactionLogProps) => {
   const formatCurrency = (amount: number, currency: string) => {
     const symbols: Record<string, string> = {
       USD: "$",
@@ -48,6 +50,9 @@ export const TransactionLog = ({ transactions }: TransactionLogProps) => {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Transaction ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Transaction
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -62,11 +67,17 @@ export const TransactionLog = ({ transactions }: TransactionLogProps) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Note
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {transactions.map((transaction) => (
               <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+                  #{transaction.id}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-3">
                     <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
@@ -115,6 +126,17 @@ export const TransactionLog = ({ transactions }: TransactionLogProps) => {
                   <div className="truncate" title={transaction.note}>
                     {transaction.note || "—"}
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onReverseTransaction(transaction.id)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Undo2 className="w-4 h-4 mr-1" />
+                    Reverse
+                  </Button>
                 </td>
               </tr>
             ))}
