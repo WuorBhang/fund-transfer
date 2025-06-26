@@ -1,5 +1,5 @@
 
-import { Account } from "@/pages/Index";
+import { Account } from "@/types/treasury";
 import { Card } from "@/components/ui/card";
 
 interface AccountCardProps {

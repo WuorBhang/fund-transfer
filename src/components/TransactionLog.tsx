@@ -1,4 +1,5 @@
-import { Transaction } from "@/pages/Index";
+
+import { Transaction } from "@/types/treasury";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

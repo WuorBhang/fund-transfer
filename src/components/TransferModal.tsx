@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Account } from "@/pages/Index";
+import { Account } from "@/types/treasury";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { convertCurrency } from "@/utils/currency";
 
 interface TransferModalProps {
   isOpen: boolean;
@@ -28,17 +29,6 @@ export const TransferModal = ({ isOpen, onClose, accounts, onTransfer }: Transfe
   const selectedFromAccount = accounts.find(acc => acc.id === fromAccount);
   const selectedToAccount = accounts.find(acc => acc.id === toAccount);
   const amountNum = parseFloat(amount) || 0;
-
-  const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
-    const rates: Record<string, Record<string, number>> = {
-      USD: { KES: 150, NGN: 1600 },
-      KES: { USD: 1/150, NGN: 10.67 },
-      NGN: { USD: 1/1600, KES: 1/10.67 },
-    };
-
-    if (fromCurrency === toCurrency) return amount;
-    return Math.round(amount * rates[fromCurrency][toCurrency] * 100) / 100;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
